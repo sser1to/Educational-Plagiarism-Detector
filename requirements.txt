@@ -1,0 +1,21 @@
+# Core dependencies
+numpy>=1.20.0
+scikit-learn>=1.0.0
+matplotlib>=3.5.0
+seaborn>=0.11.0
+
+# Natural Language Processing
+nltk>=3.6.0
+pymorphy3>=1.0.0  # For Russian language support (Python 3.11+)
+
+# Document processing
+PyPDF2>=3.0.0
+python-docx>=0.8.11
+
+# Testing
+pytest>=7.0.0
+pytest-cov>=3.0.0
+
+# Code quality (for CI/CD)
+flake8>=6.0.0
+black>=23.0.0

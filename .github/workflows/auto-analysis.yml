@@ -1,0 +1,232 @@
+name: Auto Plagiarism Analysis
+
+on:
+  push:
+    branches: [ main, dev ]
+    paths:
+      - 'uploads/**'
+  pull_request:
+    branches: [ main, dev ]
+    paths:
+      - 'uploads/**'
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Cache pip packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Cache NLTK data
+      uses: actions/cache@v4
+      with:
+        path: ~/nltk_data
+        key: ${{ runner.os }}-nltk
+        restore-keys: |
+          ${{ runner.os }}-nltk-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Download NLTK data
+      run: |
+        python -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab'); nltk.download('stopwords'); nltk.download('wordnet'); nltk.download('omw-1.4')"
+    
+    - name: Check for files in uploads/
+      id: check_files
+      run: |
+        if [ -d "uploads" ] && [ "$(ls -A uploads/ 2>/dev/null | grep -E '\.(txt|pdf|docx|doc)$')" ]; then
+          echo "has_files=true" >> $GITHUB_OUTPUT
+          echo "✓ Найдены файлы для анализа"
+          ls -la uploads/
+        else
+          echo "has_files=false" >> $GITHUB_OUTPUT
+          echo "⚠ Нет файлов для анализа"
+        fi
+    
+    - name: Run plagiarism analysis
+      if: steps.check_files.outputs.has_files == 'true'
+      run: |
+        timestamp=$(date +%Y%m%d_%H%M%S)
+        echo "Запуск анализа плагиата..."
+        python -c "
+        import sys
+        import json
+        from datetime import datetime
+        from pathlib import Path
+        sys.path.insert(0, '.')
+        from src.main import PlagiarismDetector
+        
+        # Создание детектора
+        detector = PlagiarismDetector(language='russian')
+        
+        # Загрузка документов
+        try:
+            detector.load_documents('uploads/')
+            if not detector.documents:
+                print('⚠ Нет документов для анализа')
+                sys.exit(0)
+            
+            # Обработка и сравнение
+            detector.process_documents()
+            detector.compare_documents()
+            
+            # Генерация отчета
+            report = detector.generate_report(threshold=0.7)
+            
+            # Сохранение результатов
+            results = {
+                'timestamp': datetime.now().isoformat(),
+                'total_documents': report['total_documents'],
+                'threshold': report['threshold'],
+                'suspicious_pairs_count': len(report['suspicious_pairs']),
+                'suspicious_pairs': [
+                    {
+                        'document1': pair['document1'],
+                        'document2': pair['document2'],
+                        'similarity': pair['similarity'],
+                        'cosine': pair['cosine'],
+                        'sequence_matcher': pair['sequence_matcher'],
+                        'bigram': pair['bigram']
+                    }
+                    for pair in report['suspicious_pairs']
+                ],
+                'document_names': detector.comparison_results['document_names']
+            }
+            
+            # Сохранение в JSON
+            Path('results').mkdir(exist_ok=True)
+            output_file = f'results/analysis_${timestamp}.json'
+            with open(output_file, 'w', encoding='utf-8') as f:
+                json.dump(results, f, indent=2, ensure_ascii=False)
+            
+            print(f'✓ Результаты сохранены в {output_file}')
+            print(f'Проанализировано документов: {report[\"total_documents\"]}')
+            print(f'Найдено подозрительных пар: {len(report[\"suspicious_pairs\"])}')
+            
+        except Exception as e:
+            print(f'❌ Ошибка при анализе: {e}')
+            import traceback
+            traceback.print_exc()
+            sys.exit(1)
+        "
+    
+    - name: Display analysis summary
+      if: steps.check_files.outputs.has_files == 'true'
+      run: |
+        echo "════════════════════════════════════════════════════════"
+        echo "РЕЗУЛЬТАТЫ АНАЛИЗА ПЛАГИАТА"
+        echo "════════════════════════════════════════════════════════"
+        latest_result=$(ls -t results/analysis_*.json 2>/dev/null | head -n1)
+        if [ -f "$latest_result" ]; then
+          python -c "
+        import json
+        import sys
+        
+        with open('$latest_result', 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        print(f'Время анализа: {data[\"timestamp\"]}')
+        print(f'Всего документов: {data[\"total_documents\"]}')
+        print(f'Порог схожести: {data[\"threshold\"]:.0%}')
+        print(f'Найдено подозрительных пар: {data[\"suspicious_pairs_count\"]}')
+        print()
+        
+        if data['suspicious_pairs']:
+            print('ПОДОЗРИТЕЛЬНЫЕ ПАРЫ:')
+            print('─' * 56)
+            for idx, pair in enumerate(data['suspicious_pairs'], 1):
+                risk = '🔴 ВЫСОКИЙ' if pair['similarity'] >= 0.9 else '🟡 СРЕДНИЙ'
+                print(f'{idx}. {risk}')
+                print(f'   {pair[\"document1\"]} ↔ {pair[\"document2\"]}')
+                print(f'   Схожесть: {pair[\"similarity\"]:.1%}')
+                print()
+        else:
+            print('✓ Подозрительных пар не найдено')
+        print('═' * 56)
+          "
+        else
+          echo "⚠ Результаты анализа не найдены"
+        fi
+    
+    - name: Upload analysis results
+      if: steps.check_files.outputs.has_files == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: plagiarism-analysis-results
+        path: results/analysis_*.json
+        retention-days: 90
+    
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request' && steps.check_files.outputs.has_files == 'true'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Найти последний результат
+          const resultsDir = 'results';
+          const files = fs.readdirSync(resultsDir)
+            .filter(f => f.startsWith('analysis_') && f.endsWith('.json'))
+            .map(f => ({
+              name: f,
+              path: path.join(resultsDir, f),
+              time: fs.statSync(path.join(resultsDir, f)).mtime.getTime()
+            }))
+            .sort((a, b) => b.time - a.time);
+          
+          if (files.length === 0) {
+            console.log('Нет результатов для комментирования');
+            return;
+          }
+          
+          const latestFile = files[0].path;
+          const data = JSON.parse(fs.readFileSync(latestFile, 'utf8'));
+          
+          // Формирование комментария
+          let comment = '## 📊 Результаты анализа плагиата\n\n';
+          comment += `**Время анализа:** ${data.timestamp}\n`;
+          comment += `**Всего документов:** ${data.total_documents}\n`;
+          comment += `**Порог схожести:** ${(data.threshold * 100).toFixed(0)}%\n`;
+          comment += `**Найдено подозрительных пар:** ${data.suspicious_pairs_count}\n\n`;
+          
+          if (data.suspicious_pairs_count > 0) {
+            comment += '### ⚠️ Подозрительные пары:\n\n';
+            comment += '| № | Документы | Схожесть | Риск |\n';
+            comment += '|---|-----------|----------|------|\n';
+            
+            data.suspicious_pairs.forEach((pair, idx) => {
+              const risk = pair.similarity >= 0.9 ? '🔴 Высокий' : '🟡 Средний';
+              const sim = (pair.similarity * 100).toFixed(1);
+              comment += `| ${idx + 1} | ${pair.document1}<br>↔<br>${pair.document2} | ${sim}% | ${risk} |\n`;
+            });
+          } else {
+            comment += '### ✅ Подозрительных пар не найдено\n';
+          }
+          
+          comment += '\n---\n';
+          comment += '*Полные результаты доступны в артефактах workflow*';
+          
+          // Публикация комментария
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
