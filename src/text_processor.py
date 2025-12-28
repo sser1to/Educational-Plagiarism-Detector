@@ -33,13 +33,13 @@ class TextProcessor:
             nltk.download('stopwords', quiet=True)
             self.stop_words = set(stopwords.words(language))
         
-        # Для русского языка используем pymorphy2
+        # Для русского языка используем pymorphy3
         if language == 'russian':
             try:
-                import pymorphy2
-                self.morph = pymorphy2.MorphAnalyzer()
+                import pymorphy3
+                self.morph = pymorphy3.MorphAnalyzer()
             except ImportError:
-                print("Warning: pymorphy2 not installed. Russian lemmatization will not work.")
+                print("Warning: pymorphy3 not installed. Russian lemmatization will not work.")
                 self.morph = None
     
     def _ensure_nltk_data(self):
