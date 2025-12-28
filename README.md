@@ -6,7 +6,7 @@
 
 ### Основной функционал
 
-- Загрузка студенческих работ (txt, pdf файлы)
+- Загрузка студенческих работ (txt, pdf, docx)
 - Предварительная обработка (tokenization, lemmatization)
 - Сравнение текстов несколькими методами:
   - Cosine similarity с TF-IDF
@@ -21,16 +21,17 @@
 ### Необходимые компоненты
 
 - Python 3.11
-- pip или conda
+- pip
 
 ### Установка
 
 ```bash
 # Клонирование репозитория
 git clone https://github.com/sser1to/Educational-Plagiarism-Detector.git
+
 cd Educational-Plagiarism-Detector
 
-# Создание виртуального окружения (рекомендуется)
+# Создание виртуального окружения
 python -m venv venv
 
 # Активация виртуального окружения
@@ -41,10 +42,6 @@ source venv/bin/activate
 
 # Установка зависимостей
 pip install -r requirements.txt
-
-# Данные NLTK загрузятся автоматически при первом запуске
-# Или загрузите вручную:
-# python -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab'); nltk.download('stopwords'); nltk.download('wordnet')"
 ```
 
 ### Быстрый старт
@@ -52,9 +49,6 @@ pip install -r requirements.txt
 ```bash
 # Простой анализ примеров
 python run.py data/
-
-# Или через модуль
-python -m src.main data/
 
 # Запуск интерактивных примеров
 python scripts/example.py
@@ -156,10 +150,12 @@ python scripts/example.py
 - matplotlib >= 3.5.0
 - seaborn >= 0.11.0
 - nltk >= 3.6.0
-- pymorphy2 >= 0.9.1 (для русского языка)
+- pymorphy2 >= 0.9.1
 - PyPDF2 >= 3.0.0
 - python-docx >= 0.8.11
-- pytest >= 7.0.0 (для тестирования)
+- pytest >= 7.0.0
+- flake8>=6.0.0
+- black>=23.0.0
 
 ## Тестирование
 
@@ -262,6 +258,10 @@ Workflow настроен в [.github/workflows/auto-analysis.yml](.github/workf
 2. **Отчет о плагиате** - выделяет подозрительные пары с высокой схожестью
 3. **Сравнительные графики** - детальное сравнение различных метрик
 4. **Распределение схожести** - гистограмма всех значений схожести
+
+<img width="1440" height="840" alt="example1" src="https://github.com/user-attachments/assets/7ac8d52e-c9b3-434e-99f5-2bafac4ba7c2" />
+
+<img width="1440" height="840" alt="example2" src="https://github.com/user-attachments/assets/f982b65d-53f8-4bec-9590-34ae48c46a74" />
 
 ## FAQ
 
