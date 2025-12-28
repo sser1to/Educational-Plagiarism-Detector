@@ -4,11 +4,23 @@
 
 Система для определения плагиата в студенческих работах, использующая различные методы сравнения текстов (cosine similarity, sequence matching, n-grams).
 
+### Основной функционал
+
+- Загрузка студенческих работ (txt, pdf файлы)
+- Предварительная обработка (tokenization, lemmatization)
+- Сравнение текстов несколькими методами:
+  - Cosine similarity с TF-IDF
+  - Longest common subsequence
+  - N-gram matching
+- Вывод процента похожести между работами
+- Визуализация результатов в виде матрицы похожести
+
+
 ## Как установить
 
 ### Необходимые компоненты
 
-- Python 3.8+
+- Python 3.11
 - pip or conda
 
 ### Установка
@@ -37,6 +49,25 @@ print(result)
 [Другие сложные примеры]
 
 ## Структура проекта
+
+```
+.
+├── src/                 # Source code
+│   ├── __init__.py
+│   ├── main.py
+│   └── utils.py
+├── tests/              # Unit tests
+│   ├── __init__.py
+│   └── test_main.py
+├── data/               # Data files
+│   └── sample.csv
+├── docs/               # Documentation
+├── scripts/            # Utility scripts
+├── .github/workflows/  # CI/CD
+├── README.md
+├── requirements.txt
+└── .gitignore
+```
 
 ## Зависимости
 
