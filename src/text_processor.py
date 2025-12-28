@@ -74,7 +74,12 @@ class TextProcessor:
         # Удаление email
         text = re.sub(r'\S+@\S+', '', text)
         
-        #okens = word_tokenize(text.lower())
+        # Удаление цифр (опционально)
+        # text = re.sub(r'\d+', '', text)
+        
+        # Удаление лишних пробелов
+        text = re.sub(r'\s+', ' ', text).strip()
+        
         return text
     
     def tokenize(self, text: str) -> List[str]:
