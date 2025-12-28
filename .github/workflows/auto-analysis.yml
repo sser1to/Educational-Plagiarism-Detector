@@ -15,15 +15,15 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Python 3.11
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
     
     - name: Cache pip packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -31,7 +31,7 @@ jobs:
           ${{ runner.os }}-pip-
     
     - name: Cache NLTK data
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/nltk_data
         key: ${{ runner.os }}-nltk
@@ -166,7 +166,7 @@ jobs:
     
     - name: Upload analysis results
       if: steps.check_files.outputs.has_files == 'true'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: plagiarism-analysis-results
         path: results/analysis_*.json
@@ -174,7 +174,7 @@ jobs:
     
     - name: Comment PR with results
       if: github.event_name == 'pull_request' && steps.check_files.outputs.has_files == 'true'
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         script: |
           const fs = require('fs');
