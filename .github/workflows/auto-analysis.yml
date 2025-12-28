@@ -73,7 +73,7 @@ jobs:
         from src.main import PlagiarismDetector
         
         # Создание детектора
-        detector = PlagiarismDetector(language='english')
+        detector = PlagiarismDetector(language='russian')
         
         # Загрузка документов
         try:

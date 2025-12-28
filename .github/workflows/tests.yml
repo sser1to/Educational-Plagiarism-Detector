@@ -3,8 +3,18 @@ name: Tests and Code Quality
 on:
   push:
     branches: [ main, dev ]
+    paths-ignore:
+      - 'uploads/**'
+      - 'results/**'
+      - 'data/**'
+      - '*.md'
   pull_request:
     branches: [ main, dev ]
+    paths-ignore:
+      - 'uploads/**'
+      - 'results/**'
+      - 'data/**'
+      - '*.md'
 
 jobs:
   test:
